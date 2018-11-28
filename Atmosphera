@@ -1,0 +1,109 @@
+//Definitions
+      
+      // Stepper Motor Set Up
+      #include <AccelStepper.h>
+      #define HALFSTEP 8
+      
+      // Motor pin definitions
+      #define motorPin1  8      // IN1 on the ULN2003 driver 1
+      #define motorPin2  9      // IN2 on the ULN2003 driver 1
+      #define motorPin3  10     // IN3 on the ULN2003 driver 1
+      #define motorPin4  11     // IN4 on the ULN2003 driver 1
+      
+      // Define a stepper and the pins it will use
+      AccelStepper stepper(HALFSTEP, motorPin1, motorPin3, motorPin2, motorPin4);
+      
+      //LDR Definitions
+      int LDR = 0;              // analog pin to which LDR is connected
+      int LDRValue = 0;         // that’s a variable to store LDR values
+      int ls = 300;       
+      
+      //NeoPixel LED
+      #include <Adafruit_NeoPixel.h>
+      #ifdef __AVR__
+      #include <avr/power.h>
+      #endif
+      
+      #define PIN            6  // pin to which NeoPixels is connected
+      #define NUMPIXELS      9  // number of NeoPixels attached to Arduino
+
+      // example for more information on possible values.
+      Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+      
+      //Push Button Definitions
+      const int buttonPin = 2;  // the number of the pushbutton pin
+      int buttonState = 0;      // variable for reading the pushbutton status
+
+void setup() 
+ 
+  {
+    
+    pinMode(buttonPin, INPUT);            // initialize the pushbutton pin as an input
+      {  
+        stepper.setMaxSpeed(1000.0);      // max stepper speed
+        stepper.setAcceleration(500.0);   // acceleration speed
+        stepper.setSpeed(200);            // stepper speed
+        Serial.begin(9600);               // sets serial port for communication
+        
+        pixels.begin();                   // this initializes the NeoPixel library
+      }
+  }
+
+void loop() 
+
+  {
+
+    buttonState = digitalRead(buttonPin);                                     // read the state of the slide button value
+
+    if (buttonState == HIGH)                                                  // check if the slide button is on. If it is, the buttonState is HIGH:
+
+      {
+       {   
+         LDRValue = analogRead(LDR);                                          // read LDR value
+         if (LDRValue < ls)                                                   // if LDR value is lower than ls
+            {
+              if (stepper.currentPosition() == 0)                             // if stepper motors current position is 0
+                { 
+                  for(int i=0;i<NUMPIXELS;i++)                                // when light is in state 0
+                    {
+                      pixels.setPixelColor(i, pixels.Color(150,150,150));     // sets white light colour
+                      pixels.show();                                          // sends the updated pixel color to the hardware.
+                    }
+                  stepper.runToNewPosition(1800);                             // turn motor 1500 steps
+                  if (stepper.currentPosition() == 1800)                      // if current position is 1500 steps
+                    { 
+                      for(int i=0;i<NUMPIXELS;i++)                            // when light is in state 0
+                        {
+                          pixels.setPixelColor(i, pixels.Color(150,150,150)); // white light
+                          pixels.show();                                      // sends the updated pixel color to the hardware.
+                        }
+                      stepper.runToNewPosition(0);                            // turn motor back to step 0
+                    }
+                  }
+              }
+      
+    
+          else if (LDRValue > ls)                                             // if LDR value is greater than ls 
+              { 
+                (stepper.stop());                                             // stop stepper motor
+                for(int i=0;i<NUMPIXELS;i++)
+                  {
+                    pixels.setPixelColor(i, pixels.Color(0,0,0));             // no light
+                    pixels.show();                                            // sends the updated pixel color to the hardware.
+                  }
+              }
+  
+       }
+      }
+  
+  
+    else 
+      {
+        (stepper.stop());                                                     // stepper motor stops
+        for(int i=0;i<NUMPIXELS;i++)                                          // when light is in state 0
+          {
+            pixels.setPixelColor(i, pixels.Color(0,0,0));                     // no light
+            pixels.show();                                                    // sends the updated pixel color to the hardware.
+          }
+      }
+  }
